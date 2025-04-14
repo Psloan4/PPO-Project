@@ -1,0 +1,64 @@
+[gd_scene load_steps=4 format=3 uid="uid://deanjfkolbxvy"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_67j33"]
+size = Vector2(20, 648)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ml24n"]
+size = Vector2(1112, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_c0n1y"]
+size = Vector2(1112, 10)
+
+[node name="Borders" type="Node2D"]
+
+[node name="ColorRect" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(20, 648)
+offset_right = 20.0
+offset_bottom = 648.0
+color = Color(0.205117, 0.205117, 0.205117, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(20, 648)
+offset_left = 1132.0
+offset_right = 1152.0
+offset_bottom = 648.0
+color = Color(0.205117, 0.205117, 0.205117, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(1112, 40)
+offset_left = 20.0
+offset_top = 608.0
+offset_right = 1132.0
+offset_bottom = 648.0
+color = Color(0.205117, 0.205117, 0.205117, 1)
+
+[node name="ColorRect4" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(1112, 10)
+offset_left = 20.0
+offset_right = 1132.0
+offset_bottom = 10.0
+color = Color(0.205117, 0.205117, 0.205117, 1)
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+position = Vector2(10, 324)
+shape = SubResource("RectangleShape2D_67j33")
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
+position = Vector2(1142, 324)
+shape = SubResource("RectangleShape2D_67j33")
+
+[node name="StaticBody2D3" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D3"]
+position = Vector2(576, 628)
+shape = SubResource("RectangleShape2D_ml24n")
+
+[node name="StaticBody2D4" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D4"]
+position = Vector2(576, 5)
+shape = SubResource("RectangleShape2D_c0n1y")
