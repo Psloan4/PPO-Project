@@ -1,0 +1,28 @@
+[gd_scene load_steps=6 format=3 uid="uid://bfuo8mojyhg2"]
+
+[ext_resource type="Script" path="res://bot.gd" id="1_18nl6"]
+[ext_resource type="Shader" path="res://bot.gdshader" id="2_01sva"]
+[ext_resource type="Texture2D" uid="uid://4vy737r4ry2g" path="res://full_robot.png" id="3_yd31r"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mrged"]
+resource_local_to_scene = true
+shader = ExtResource("2_01sva")
+shader_parameter/replacement_color = null
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7n53n"]
+size = Vector2(120, 128)
+
+[node name="Bot" type="CharacterBody2D"]
+scale = Vector2(0.6, 0.6)
+collision_layer = 3
+script = ExtResource("1_18nl6")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+material = SubResource("ShaderMaterial_mrged")
+scale = Vector2(2, 2)
+texture = ExtResource("3_yd31r")
+hframes = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_7n53n")
