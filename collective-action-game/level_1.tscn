@@ -16,7 +16,7 @@ position = Vector2(935, 579)
 scale = Vector2(6.26616, -1.47754)
 
 [node name="Goal" parent="." instance=ExtResource("4_528tx")]
-position = Vector2(963, 493)
+position = Vector2(963, 484)
 
 [node name="Borders" parent="." instance=ExtResource("5_fmovg")]
 

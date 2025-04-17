@@ -7,6 +7,8 @@ const SPAWN_Y := 569
 var spawn_x := 150
 const SPAWN_X_INC := 80
 
+var total_bots := 0
+
 @export var bot_container: Node2D
 
 var colors = [
@@ -25,4 +27,6 @@ func create_bot(peer: PacketPeerUDP):
 	bot.color = colors.pop_front()
 	bot.global_position = Vector2(spawn_x, SPAWN_Y)
 	spawn_x += SPAWN_X_INC
+	total_bots += 1
+	bot.bot_id = total_bots
 	bot_container.add_child(bot)
