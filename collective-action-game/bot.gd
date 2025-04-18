@@ -25,8 +25,9 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * delta
 	
+	
 	if in_session:
-		update_player_movement_input()
+		update_movement_input()
 		apply_movement_input()
 	animate_movement()
 	move_and_slide()

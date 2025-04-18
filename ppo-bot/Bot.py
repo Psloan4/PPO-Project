@@ -104,6 +104,7 @@ class Bot:
         finished = False
         while not finished:
             finished = self.run_timestep()
+        return self.episode_data
         
 
     def run_timestep(self) -> bool:
@@ -146,9 +147,23 @@ class Bot:
         
         
     def get_action(self, input_tensor):
+        with torch.no_grad():
+            output = self.network(input_tensor)
+        #print(output)
+        direction = "stay"
+        jump = False
+
+        if output[0] > 0.55:
+            direction = "right"  # Move right
+        elif output[0] < .45:
+            direction = "left"  # Move left
+
+        if output[1] > .5:
+            jump = True
+
         return {
-            "direction": "stay",
-            "jump": True,
+            "direction": direction,
+            "jump": jump,
         }
 
     def get_distance_reward(self, bot_data, goal_data) -> float:
