@@ -1,7 +1,7 @@
 class_name Level
 extends Node2D
 
-const EPISODE_TIME = 15
+const EPISODE_TIME = 30
 
 @export var goal: Area2D
 

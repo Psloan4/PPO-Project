@@ -13,6 +13,9 @@ var peer: PacketPeerUDP
 var bot_id: int = 1
 var goal_position: Vector2
 var in_session := false
+var movement_direction := 0
+var jump := false
+
 
 func _ready():
 	var shader_mat = sprite_2d.material as ShaderMaterial
@@ -23,26 +26,38 @@ func _physics_process(delta: float) -> void:
 		velocity += get_gravity() * delta
 	
 	if in_session:
-		var movement_input := get_movement_input()
-		apply_movement_input(movement_input)
+		update_player_movement_input()
+		apply_movement_input()
 	animate_movement()
 	move_and_slide()
 	
 	if in_session:
 		distribute_game_state()
 
-func get_movement_input() -> Dictionary:
-	return {
-		"direction": Input.get_axis("ui_left", "ui_right"),
-		"jump": Input.is_action_just_pressed("ui_accept") and is_on_floor(),
-	}
+func update_player_movement_input():
+	movement_direction = int(Input.get_axis("ui_left", "ui_right"))
+	jump = Input.is_action_just_pressed("ui_accept")
 
-func apply_movement_input(movement_input: Dictionary):
-	if movement_input["jump"]:
+
+func update_movement_input():
+	if peer.get_available_packet_count() > 0:
+		var packet := peer.get_packet()
+		var json_string := packet.get_string_from_utf8()
+		var action_data: Dictionary = JSON.parse_string(json_string)
+		match action_data["direction"]:
+			"right":
+				movement_direction = 1
+			"left":
+				movement_direction = -1
+			_:
+				movement_direction = 0
+		jump = action_data["jump"]
+
+func apply_movement_input():
+	if jump and is_on_floor():
 		velocity.y = JUMP_VELOCITY
-	var direction: int = movement_input["direction"]
-	if direction:
-		velocity.x = direction * SPEED
+	if movement_direction:
+		velocity.x = movement_direction * SPEED
 	else:
 		velocity.x = move_toward(velocity.x, 0, SPEED)
 

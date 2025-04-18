@@ -15,8 +15,8 @@ func _ready():
 	server.listen(PORT)
 
 func _process(_delta):
-	if bots_connected >= MAX_BOTS: return
 	server.poll()
+	if bots_connected >= MAX_BOTS: return
 	if server.is_connection_available():
 		var peer: PacketPeerUDP = server.take_connection()
 		if peer.get_available_packet_count() > 0:

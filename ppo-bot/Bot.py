@@ -2,7 +2,8 @@ import socket
 import json
 import time
 import numpy as np
-# import torch
+import torch
+import math
 
 class Bot:
     def __init__(self, network, server_ip='127.0.0.1', server_port=3000):
@@ -16,6 +17,7 @@ class Bot:
 
         self.max_x = 1152
         self.max_y = 648
+        self.action_interval = .2
 
     def connect(self):
         """ Attempt to send a message to the server to establish a connection """
@@ -43,7 +45,7 @@ class Bot:
             try:
                 message = data.encode()
                 self.sock.sendto(message, (self.server_ip, self.server_port))
-                print(f"Bot: Sent data: {data}")
+                #print(f"Bot: Sent data: {data}")
             except Exception as e:
                 print(f"Bot: Failed to send data: {e}")
         else:
@@ -78,7 +80,7 @@ class Bot:
 
         full_obs = np.concatenate([normalized_bot, normalized_goal, flat_scan])
 
-        torch.tensor(full_obs, dtype=torch.float32)
+        return torch.tensor(full_obs, dtype=torch.float32)
 
     def run(self):
         """ Simulate bot's main loop for interaction """
@@ -97,7 +99,17 @@ class Bot:
                     print("Invalid JSON received")
         
         # replace this with running a timestep, which includes reading data until it is time to take an action, get that action, send it, and then loop again
-        while self.is_connected:
+        self.episode_data = []
+        self.last_action_time = time.time()
+        finished = False
+        while not finished:
+            finished = self.run_timestep()
+        
+
+    def run_timestep(self) -> bool:
+        data = {}
+
+        while time.time() - self.last_action_time < self.action_interval:
             received = self.receive_data()
             if received:
                 try:
@@ -105,13 +117,42 @@ class Bot:
 
                     if "end_episode" in data:
                         print("Episode result: ", data["end_episode"])
+                        self.episode_data[-1]["done"] = True
+                        self.episode_data[-1]["reward"] += 10
                         self.close()
-                        return {}
+                        return True
                     elif "game_state" in data:
                         #print("received game state: ", data["game_state"])
-                        pass
-
+                        self.latest_game_state = data["game_state"]
                 except json.JSONDecodeError:
                     print("Invalid JSON received")
+        
+        input_tensor = self.build_input_tensor(self.latest_game_state)
 
-    
+        self.last_action_time = time.time()
+        action = self.get_action(input_tensor)
+        self.send_data(json.dumps(action))
+
+        # save timestep
+        self.episode_data.append({
+            "state": input_tensor.detach().cpu().numpy().tolist(),
+            "action": action,
+            "reward": self.get_distance_reward(self.latest_game_state["bot_data"], self.latest_game_state["goal_data"]),
+            "done": False,
+        })
+        # print("reward: ", self.episode_data)
+
+        return False
+        
+        
+    def get_action(self, input_tensor):
+        return {
+            "direction": "stay",
+            "jump": True,
+        }
+
+    def get_distance_reward(self, bot_data, goal_data) -> float:
+        distance = math.sqrt((goal_data[0] - bot_data[0])**2 + (goal_data[1] - bot_data[1])**2)
+        reward = -distance / 700
+        #print("reward: ", reward)
+        return reward 
