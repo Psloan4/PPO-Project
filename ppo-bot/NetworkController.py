@@ -10,10 +10,12 @@ MAX_BOTS = 4
 
 def iteration(network, batch_size=8):
     # go through n batches of rollouts, and save their data, and return it
+    print("Beginning iteration...")
     data = rollout(network, batch_size)
 
 def rollout(network, batch_size):
     for i in range(batch_size):
+        print("Running episode ", i)
         run_episode(network)
 
 def run_episode(network):
@@ -48,7 +50,7 @@ def run_episode(network):
 def run_bot_instance(network):
     bot = Bot(network)
     bot.connect()
-    bot.run()
+    return bot.run()
 
 def main():
     # get the network from storage if available

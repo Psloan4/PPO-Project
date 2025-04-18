@@ -1,6 +1,5 @@
-[gd_scene load_steps=7 format=3 uid="uid://dv4mg6kbr2f64"]
+[gd_scene load_steps=6 format=3 uid="uid://dv4mg6kbr2f64"]
 
-[ext_resource type="PackedScene" uid="uid://0camacc4rx4q" path="res://collision_surface.tscn" id="1_fuf2j"]
 [ext_resource type="Script" path="res://level.gd" id="1_sutm3"]
 [ext_resource type="PackedScene" uid="uid://pya8xf1cf3d7" path="res://goal.tscn" id="4_528tx"]
 [ext_resource type="PackedScene" uid="uid://deanjfkolbxvy" path="res://borders.tscn" id="5_fmovg"]
@@ -11,12 +10,8 @@
 script = ExtResource("1_sutm3")
 goal = NodePath("Goal")
 
-[node name="CollisionSurface5" parent="." instance=ExtResource("1_fuf2j")]
-position = Vector2(935, 579)
-scale = Vector2(6.26616, -1.47754)
-
 [node name="Goal" parent="." instance=ExtResource("4_528tx")]
-position = Vector2(963, 484)
+position = Vector2(1100, 560)
 
 [node name="Borders" parent="." instance=ExtResource("5_fmovg")]
 
@@ -28,3 +23,6 @@ script = ExtResource("5_tckb1")
 [node name="BotManager" type="Node" parent="." node_paths=PackedStringArray("bot_container")]
 script = ExtResource("6_sdoiq")
 bot_container = NodePath("../Bots")
+
+[node name="EpisodeTimer" type="Timer" parent="."]
+one_shot = true

@@ -11,50 +11,72 @@ var movement_frame = 0
 var color: Color = Color.WHITE
 var peer: PacketPeerUDP
 var bot_id: int = 1
+var goal_position: Vector2
+var in_session := false
 
 func _ready():
 	var shader_mat = sprite_2d.material as ShaderMaterial
 	shader_mat.set_shader_parameter("replacement_color", color)
 
 func _physics_process(delta: float) -> void:
-	# Add the gravity.
 	if not is_on_floor():
 		velocity += get_gravity() * delta
+	
+	if in_session:
+		var movement_input := get_movement_input()
+		apply_movement_input(movement_input)
+	animate_movement()
+	move_and_slide()
+	
+	if in_session:
+		distribute_game_state()
 
-	# Handle jump.
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
+func get_movement_input() -> Dictionary:
+	return {
+		"direction": Input.get_axis("ui_left", "ui_right"),
+		"jump": Input.is_action_just_pressed("ui_accept") and is_on_floor(),
+	}
+
+func apply_movement_input(movement_input: Dictionary):
+	if movement_input["jump"]:
 		velocity.y = JUMP_VELOCITY
-
-	# Get the input direction and handle the movement/deceleration.
-	# As good practice, you should replace UI actions with custom gameplay actions.
-	var direction := Input.get_axis("ui_left", "ui_right")
+	var direction: int = movement_input["direction"]
 	if direction:
 		velocity.x = direction * SPEED
 	else:
 		velocity.x = move_toward(velocity.x, 0, SPEED)
-	
+
+func animate_movement():
+	const ANIMATION_FRAME_THRESHOLD = 8
 	if velocity.x != 0:
-		movement_frame = (movement_frame + 1) % 6
-		var jump_val := 0
-		if not is_on_floor():
-			jump_val = 2
-		#print("FRAME:")
-		#print(movement_frame)
-		#print(jump_val)
-		#print("")
-		sprite_2d.frame = floor(movement_frame / 3.0) + jump_val
-	
-	move_and_slide()
+		movement_frame = (movement_frame + 1) % ANIMATION_FRAME_THRESHOLD
+	var jump_val := 0
+	if not is_on_floor():
+		jump_val = 2
+	sprite_2d.frame = floor(movement_frame / (ANIMATION_FRAME_THRESHOLD / 2.0)) + jump_val
+
+func distribute_game_state():
+	var bot_data = [round(self.global_position.x), round(self.global_position.y)]
+	var goal_data = [goal_position.x, goal_position.y]
 	var scan_data = scan_area()
-	print_matrix(scan_data)
+	var packet := {
+		"bot_data": bot_data,
+		"goal_data": goal_data,
+		"scan_data": scan_data,
+	}
+	send_packet({"game_state": packet})
+	#print_matrix(scan_data)
+
+func send_packet(packet: Dictionary):
+	peer.put_packet(JSON.stringify(packet).to_utf8_buffer())
 
 func get_body_data(body: Node2D) -> int:
-	if body is StaticBody2D:
-		return 5
-	elif body is CharacterBody2D:
-		return body.bot_id
-	elif body is Area2D:
-		return 6
+	if body is StaticBody2D: # Wall
+		return 1
+	elif body is CharacterBody2D: # Bot
+		return 2#body.bot_id
+	elif body is Area2D: # Goal
+		return 3
 	return -1
 
 func get_point_data(point: Vector2) -> int:
