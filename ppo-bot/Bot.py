@@ -4,6 +4,7 @@ import time
 import numpy as np
 import torch
 import math
+import torch.distributions as D
 
 class Bot:
     def __init__(self, network, server_ip='127.0.0.1', server_port=3000):
@@ -131,14 +132,16 @@ class Bot:
         input_tensor = self.build_input_tensor(self.latest_game_state)
 
         self.last_action_time = time.time()
-        action = self.get_action(input_tensor)
-        self.send_data(json.dumps(action))
+        action_info = self.get_action(input_tensor)
+        self.send_data(json.dumps(action_info["action_packet"]))
 
         # save timestep
         self.episode_data.append({
             "state": input_tensor.detach().cpu().numpy().tolist(),
-            "action": action,
+            "action": action_info["action"],
+            "log_prob": action_info["log_prob"],
             "reward": self.get_distance_reward(self.latest_game_state["bot_data"], self.latest_game_state["goal_data"]),
+            "value": action_info["value"],
             "done": False,
         })
         # print("reward: ", self.episode_data)
@@ -148,23 +151,34 @@ class Bot:
         
     def get_action(self, input_tensor):
         with torch.no_grad():
-            output = self.network(input_tensor)
-        #print(output)
-        direction = "stay"
-        jump = False
+            
+            action_logits, state_value = self.network(input_tensor)
+            action_dist = D.Categorical(logits=action_logits)
+            action_idx = action_dist.sample()
 
-        if output[0] > 0.55:
-            direction = "right"  # Move right
-        elif output[0] < .45:
-            direction = "left"  # Move left
+            # Define the 6 possible actions
+            actions = [
+                ("left", True),   # left_jump
+                ("left", False),  # left_stay
+                ("left", False),  # left_no_jump
+                ("right", True),  # right_jump
+                ("right", False), # right_stay
+                ("right", False)  # right_no_jump
+            ]
 
-        if output[1] > .5:
-            jump = True
+            # Get the direction and jump for the sampled action
+            direction, jump = actions[action_idx.item()]
 
-        return {
-            "direction": direction,
-            "jump": jump,
-        }
+            # Return the action packet, log probabilities, and the raw action index
+            return {
+                "action_packet": {
+                    "direction": direction,
+                    "jump": jump
+                },
+                "action": action_idx.item(),
+                "log_prob": action_dist.log_prob(action_idx).item(),  # Log probability of the sampled action
+                "value": state_value.item(),
+            }
 
     def get_distance_reward(self, bot_data, goal_data) -> float:
         distance = math.sqrt((goal_data[0] - bot_data[0])**2 + (goal_data[1] - bot_data[1])**2)

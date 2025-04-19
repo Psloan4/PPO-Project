@@ -2,9 +2,10 @@ import sys
 import select
 import torch
 import os
-import json
+import pickle
 
 from Bot import Bot
+import NetworkTrainer
 from SimpleNetwork import SimpleNet
 
 MAX_BOTS = 4
@@ -16,6 +17,8 @@ def iteration(network, batch_size=8):
     rollout_data = rollout(network, batch_size)
 
     # rollout complete, now train on the data
+    trainer = NetworkTrainer(network)
+    trainer.train(rollout_data)
     
 
 def rollout(network, batch_size):
@@ -40,9 +43,11 @@ def run_episode(network):
         if pid == 0: # child process
             os.close(read_fd)
             results = run_bot_instance(network)
+            print("instance complete")
 
-            os.write(write_fd, json.dumps(results).encode())
+            os.write(write_fd, pickle.dumps(results))
             os.close(write_fd)
+            print("finished writing")
             os._exit(0)
 
         else: # parent process
@@ -52,11 +57,15 @@ def run_episode(network):
     
     for i in range(MAX_BOTS):
         os.waitpid(processes[i], 0)
+        print("process {i} complete")
         with os.fdopen(pipes[i]) as pipe:
             data = pipe.read()
-            result = json.loads(data)
+            result = pickle.loads(data)
             results.append(result)
+            print("data {i} read")
     
+    print("data collected")
+
     return results
 
 def run_bot_instance(network):
