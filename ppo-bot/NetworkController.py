@@ -12,7 +12,7 @@ from SimpleNetwork import SimpleNet
 MAX_BOTS = 4
 DIR_PATH = "./models/"
 
-def iteration(network, batch_size=2):
+def iteration(network, batch_size=4):
     # go through a batch of episodes and collect data
     print("Beginning iteration...")
     rollout_data = rollout(network, batch_size)

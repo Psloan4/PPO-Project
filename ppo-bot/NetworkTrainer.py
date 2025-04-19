@@ -3,13 +3,14 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 class NetworkTrainer:
-    def __init__(self, network, gamma=.99, tau=.95, epsilon=.2, lr=3e04, num_epochs=4):
+    def __init__(self, network, gamma=.99, tau=.95, epsilon=.2, lr=3e-4, num_epochs=4, minimbatch_size=64):
         self.network = network
         self.optimizer = optim.Adam(self.network.parameters(), lr=lr)
         self.gamma = gamma
         self.tau = tau
         self.epsilon = epsilon
         self.num_epochs = num_epochs
+        self.minibatch_size = minimbatch_size
     
     def train(self, rollout_data):
 
@@ -20,7 +21,7 @@ class NetworkTrainer:
         actions = []
         old_log_probs = []
         rewards = []
-        values = []
+        # values = []
         dones = []
         
         # Collect data
@@ -30,7 +31,7 @@ class NetworkTrainer:
                 actions.append(timestep["action"])  # action index
                 old_log_probs.append(timestep["log_prob"])
                 rewards.append(timestep["reward"])
-                values.append(timestep["value"])
+                # values.append(timestep["value"])
                 dones.append(timestep["done"])
         
         states = torch.tensor(states, dtype=torch.float32)
@@ -38,7 +39,14 @@ class NetworkTrainer:
         old_log_probs = torch.tensor(old_log_probs, dtype=torch.float32)
         rewards = torch.tensor(rewards, dtype=torch.float32)
         dones = torch.tensor(dones, dtype=torch.float32)
+        with torch.no_grad():
+            _, values = self.network(states)
+            values = values.squeeze()
+
     
+        # print("STATES:")
+        # print("Shape:", states.shape)
+        # print("First few states:\n", states[:5])
         # Compute returns
         returns = []
         next_value = 0  # At the end of the rollout, there’s no next value, so it’s 0 (or use a bootstrapped estimate)
@@ -67,20 +75,32 @@ class NetworkTrainer:
         # Normalize advantages for stability
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
+        num_samples = states.size(0)
         for i in range(self.num_epochs):
-            action_logits, state_values = self.network(states)
-            action_dist = torch.distributions.Categorical(logits=action_logits)
-            log_probs = action_dist.log_prob(actions)
+            indices = torch.randperm(num_samples)
+            for start in range(0, num_samples, self.minibatch_size):
+                end = start + self.minibatch_size
+                batch_idx = indices[start:end]
+                
+                batch_states = states[batch_idx]
+                batch_actions = actions[batch_idx]
+                batch_old_log_probs = old_log_probs[batch_idx]
+                batch_returns = returns[batch_idx]
+                batch_advantages = advantages[batch_idx]
 
-            ratios = torch.exp(log_probs - old_log_probs)
+                logits, values = self.network(batch_states)
+                dist = torch.distributions.Categorical(logits=logits)
+                log_probs = dist.log_prob(batch_actions)
+                entropy = dist.entropy().mean()
 
-            clip_advantages = torch.clamp(ratios, 1 - self.epsilon, 1+self.epsilon) * advantages
-            policy_loss = -torch.min(ratios * advantages, clip_advantages).mean()
+                ratios = torch.exp(log_probs - batch_old_log_probs)
+                clip_adv = torch.clamp(ratios, 1 - self.epsilon, 1 + self.epsilon) * batch_advantages
+                policy_loss = -torch.min(ratios * batch_advantages, clip_adv).mean()
+                value_loss = F.mse_loss(values.squeeze(), batch_returns)
 
-            value_loss = F.mse_loss(state_values.squeeze(), returns)
+                total_loss = policy_loss + 0.5 * value_loss - 0.01 * entropy
 
-            total_loss = policy_loss + .5 * value_loss
-
-            self.optimizer.zero_grad()
-            total_loss.backward()
-            self.optimizer.step()
+                self.optimizer.zero_grad()
+                total_loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=0.5)
+                self.optimizer.step()

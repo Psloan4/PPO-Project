@@ -182,6 +182,6 @@ class Bot:
 
     def get_distance_reward(self, bot_data, goal_data) -> float:
         distance = math.sqrt((goal_data[0] - bot_data[0])**2 + (goal_data[1] - bot_data[1])**2)
-        reward = -distance / 700
+        reward = -distance / 500
         #print("reward: ", reward)
         return reward 
