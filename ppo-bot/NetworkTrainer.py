@@ -27,7 +27,7 @@ class NetworkTrainer:
         for episode_data in rollout_data:
             for timestep in episode_data:
                 states.append(timestep["state"])
-                actions.append(timestep["action_raw"])  # action index
+                actions.append(timestep["action"])  # action index
                 old_log_probs.append(timestep["log_prob"])
                 rewards.append(timestep["reward"])
                 values.append(timestep["value"])
