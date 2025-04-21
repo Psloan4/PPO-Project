@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -34,6 +35,8 @@ class NetworkTrainer:
                 # values.append(timestep["value"])
                 dones.append(timestep["done"])
         
+        print(dones[:5])
+
         states = torch.tensor(states, dtype=torch.float32)
         actions = torch.tensor(actions, dtype=torch.long)
         old_log_probs = torch.tensor(old_log_probs, dtype=torch.float32)
@@ -62,18 +65,28 @@ class NetworkTrainer:
         advantages = []
         next_gae = 0
         for t in reversed(range(len(rewards))):
-            # Compute delta (reward + discount * next_value - value) and use it for GAE
+            if dones[t] == 1:
+                next_value = 0
+                next_gae = 0
             delta = rewards[t] + self.gamma * next_value - values[t]
             next_gae = delta + self.gamma * self.tau * next_gae
             advantages.insert(0, next_gae)
-            next_value = values[t]  # Update next value for the next step
+            next_value = values[t]  # <- move this after delta/gae
         
         # Convert returns and advantages to tensors
         returns = torch.tensor(returns, dtype=torch.float32)
+        returns = (returns - returns.mean()) / (returns.std() + 1e-8)
         advantages = torch.tensor(advantages, dtype=torch.float32)
 
         # Normalize advantages for stability
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+        # plt.plot(returns.numpy(), label="Returns")
+        # plt.plot(values.numpy(), label="Value estimates")
+        # plt.plot(advantages.numpy(), label="Advantages")
+        # plt.legend()
+        # plt.title("GAE Debug Plot")
+        # plt.show()
 
         num_samples = states.size(0)
         for i in range(self.num_epochs):
@@ -89,6 +102,7 @@ class NetworkTrainer:
                 batch_advantages = advantages[batch_idx]
 
                 logits, values = self.network(batch_states)
+                assert values.shape[-1] == 1 or len(values.shape) == 1
                 dist = torch.distributions.Categorical(logits=logits)
                 log_probs = dist.log_prob(batch_actions)
                 entropy = dist.entropy().mean()
@@ -98,7 +112,7 @@ class NetworkTrainer:
                 policy_loss = -torch.min(ratios * batch_advantages, clip_adv).mean()
                 value_loss = F.mse_loss(values.squeeze(), batch_returns)
 
-                total_loss = policy_loss + 0.5 * value_loss - 0.01 * entropy
+                total_loss = policy_loss + 0.75 * value_loss - 0.03 * entropy
 
                 self.optimizer.zero_grad()
                 total_loss.backward()

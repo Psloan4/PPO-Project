@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import math
 import torch.distributions as D
+import matplotlib.pyplot as plt
 
 class Bot:
     def __init__(self, network, server_ip='127.0.0.1', server_port=3000):
@@ -105,6 +106,7 @@ class Bot:
         finished = False
         while not finished:
             finished = self.run_timestep()
+        #plot_rewards_over_time(self.episode_data)
         return self.episode_data
         
 
@@ -120,7 +122,11 @@ class Bot:
                     if "end_episode" in data:
                         print("Episode result: ", data["end_episode"])
                         self.episode_data[-1]["done"] = True
-                        self.episode_data[-1]["reward"] += 10
+                        if data["end_episode"] == "win":
+                            print("length: ", len(self.episode_data))
+                            self.episode_data[-1]["reward"] += 10
+                        else:
+                            self.episode_data[-1]["reward"] -= 10
                         self.close()
                         return True
                     elif "game_state" in data:
@@ -151,7 +157,7 @@ class Bot:
         
     def get_action(self, input_tensor):
         with torch.no_grad():
-            
+            input_tensor = input_tensor.unsqueeze(0)
             action_logits, state_value = self.network(input_tensor)
             action_dist = D.Categorical(logits=action_logits)
             action_idx = action_dist.sample()
@@ -182,6 +188,27 @@ class Bot:
 
     def get_distance_reward(self, bot_data, goal_data) -> float:
         distance = math.sqrt((goal_data[0] - bot_data[0])**2 + (goal_data[1] - bot_data[1])**2)
-        reward = -distance / 500
+        reward = -distance / 200
         #print("reward: ", reward)
-        return reward 
+        return reward
+    
+
+def plot_rewards_over_time(episode_data):
+    """
+    Plots the reward over time for a given list of episode data.
+    
+    Each entry in episode_data is expected to be a dictionary with a 'reward' key.
+    """
+    # Extract reward values
+    rewards = [entry["reward"] for entry in episode_data]
+
+    # Plotting
+    plt.figure(figsize=(10, 5))
+    plt.plot(rewards, label="Reward", color='blue')
+    plt.title("Reward Over Time")
+    plt.xlabel("Timestep")
+    plt.ylabel("Reward")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()

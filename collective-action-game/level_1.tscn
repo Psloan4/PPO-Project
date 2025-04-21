@@ -6,16 +6,34 @@
 [ext_resource type="Script" path="res://bot_connector.gd" id="5_tckb1"]
 [ext_resource type="Script" path="res://bot_manager.gd" id="6_sdoiq"]
 
-[node name="Level1" type="Node2D" node_paths=PackedStringArray("goal")]
+[node name="Level1" type="Node2D" node_paths=PackedStringArray("goal", "spawn1", "spawn2", "spawn3", "spawn4")]
 script = ExtResource("1_sutm3")
 goal = NodePath("Goal")
+spawn1 = NodePath("Spawns/Spawn1")
+spawn2 = NodePath("Spawns/Spawn2")
+spawn3 = NodePath("Spawns/Spawn3")
+spawn4 = NodePath("Spawns/Spawn4")
 
 [node name="Goal" parent="." instance=ExtResource("4_528tx")]
-position = Vector2(1100, 560)
+position = Vector2(1099, 561)
 
 [node name="Borders" parent="." instance=ExtResource("5_fmovg")]
 
 [node name="Bots" type="Node2D" parent="."]
+
+[node name="Spawns" type="Node2D" parent="."]
+
+[node name="Spawn1" type="Node2D" parent="Spawns"]
+position = Vector2(99, 533)
+
+[node name="Spawn2" type="Node2D" parent="Spawns"]
+position = Vector2(172, 530)
+
+[node name="Spawn3" type="Node2D" parent="Spawns"]
+position = Vector2(259, 530)
+
+[node name="Spawn4" type="Node2D" parent="Spawns"]
+position = Vector2(334, 533)
 
 [node name="BotConnector" type="Node" parent="."]
 script = ExtResource("5_tckb1")

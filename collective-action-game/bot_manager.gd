@@ -3,10 +3,8 @@ extends Node
 
 const BOT = preload("res://bot.tscn")
 
-const SPAWN_Y := 569
-const SPAWN_X_DEF := 120
-var spawn_x := SPAWN_X_DEF
-const SPAWN_X_INC := 60
+var spawn_points: Array[Node2D]
+var round_spawn_points: Array[Node2D]
 
 var total_bots := 0
 var goal_position: Vector2
@@ -27,8 +25,8 @@ func create_bot(peer: PacketPeerUDP):
 	bot.peer = peer
 	bot.color = COLORS[color_i]
 	color_i += 1
-	bot.global_position = Vector2(spawn_x, SPAWN_Y)
-	spawn_x += SPAWN_X_INC
+	var spawn_point = round_spawn_points.pop_front()
+	bot.global_position = spawn_point.global_position
 	total_bots += 1
 	bot.bot_id = total_bots
 	bot.goal_position = goal_position
@@ -46,7 +44,7 @@ func start_bots():
 
 func stop_bots(end_state: String):
 	color_i = 0
-	spawn_x = SPAWN_X_DEF
+	round_spawn_points = spawn_points.duplicate()
 	for bot: Bot in bot_container.get_children():
 		bot.send_packet({"end_episode": end_state})
 		bot_container.remove_child(bot)

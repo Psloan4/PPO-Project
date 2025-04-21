@@ -5,7 +5,7 @@ const PORT = 3000
 
 var server := UDPServer.new()
 var bots_connected := 0
-const MAX_BOTS = 4
+const MAX_BOTS = 1
 
 signal bot_connected
 signal episode_ready

@@ -8,8 +8,9 @@ import threading
 from Bot import Bot
 from NetworkTrainer import NetworkTrainer
 from SimpleNetwork import SimpleNet
+from DualStreamNet import DualStreamNet
 
-MAX_BOTS = 4
+MAX_BOTS = 1
 DIR_PATH = "./models/"
 
 def iteration(network, batch_size=4):
@@ -28,6 +29,7 @@ def rollout(network, batch_size):
     for i in range(batch_size):
         print("Running episode ", i)
         episode_data = run_episode(network)
+
         rollout_data.extend(episode_data)
     return rollout_data
 
@@ -60,28 +62,41 @@ def download_network(file_path):
     # Check if model file exists
     if os.path.exists(file_path):
         print(f"Loading model from {file_path}...")
-        network = SimpleNet()  # Initialize the model
+        network = DualStreamNet()  # Initialize the model
         network.load_state_dict(torch.load(file_path))  # Load the weights from file
         network.eval()  # Set to eval mode if you're not training
     else:
         print(f"{file_path} not found, creating a new model...")
-        network = SimpleNet()  # Initialize a new model
+        network = DualStreamNet()  # Initialize a new model
     return network
 
 def main():
     # get the network from storage if available
-    file_path = DIR_PATH + "test_file.pth"
+    file_path = DIR_PATH + "dual_stream_net.pth"
     network = download_network(file_path)
 
     # while true iterate
-    print("Running optimisation sequence, enter 'q' at any time to quit...")
-    while True:
-        iteration(network)
-        i, o, e = select.select([sys.stdin], [], [], 1)  # wait 1 second
-        if i:
+
+    stop_event = threading.Event()
+
+    def wait_for_input():
+        while True:
             user_input = sys.stdin.readline().strip()
             if user_input.lower() == 'q':
+                stop_event.set()
                 break
+
+    threading.Thread(target=wait_for_input, daemon=True).start()
+
+    print("Running optimisation sequence, enter 'q' at any time to quit...")
+
+    while not stop_event.is_set():
+        iteration(network)
+        # i, o, e = select.select([sys.stdin], [], [], 1)  # wait 1 second
+        # if i:
+        #     user_input = sys.stdin.readline().strip()
+        #     if user_input.lower() == 'q':
+        #         break
     
     # sequence complete, save then exit
     print("Completed optimisation sequence")
@@ -93,3 +108,4 @@ def main():
     print("Exiting...")
 
 main()
+
