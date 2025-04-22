@@ -4,23 +4,26 @@ import torch
 import os
 #import pickle
 import threading
+import matplotlib.pyplot as plt
 
 from Bot import Bot
 from NetworkTrainer import NetworkTrainer
 from SimpleNetwork import SimpleNet
 from DualStreamNet import DualStreamNet
+from BigNet import BigNet
+from SimplerNet import SimplerNet
+from TinyNet import TinyNet
 
 MAX_BOTS = 1
 DIR_PATH = "./models/"
 
-def iteration(network, batch_size=4):
+def iteration(trainer, network, batch_size=10):
     # go through a batch of episodes and collect data
     print("Beginning iteration...")
     rollout_data = rollout(network, batch_size)
 
     # rollout complete, now train on the data
-    trainer = NetworkTrainer(network)
-    trainer.train(rollout_data)
+    return trainer.train(rollout_data)
     
 
 def rollout(network, batch_size):
@@ -70,10 +73,50 @@ def download_network(file_path):
         network = DualStreamNet()  # Initialize a new model
     return network
 
+def plot_logs(logs):
+    # Create a new figure
+    plt.figure(figsize=(10, 5))
+
+    # Loop through each log in the dictionary and plot it
+    for key, values in logs.items():
+        plt.plot(values, label=key)
+
+    # Add labels and title
+    plt.xlabel('Training Steps')
+    plt.ylabel('Loss / Metric Value')
+    plt.title('Training Loss and Metrics Over Time')
+
+    # Add legend
+    plt.legend()
+
+    # Show grid for better readability
+    plt.grid(True)
+
+    # Ensure everything fits within the layout
+    plt.tight_layout()
+
+    # Display the plot
+    plt.show()
+
+def plot_rewards(rewards):
+    plt.figure(figsize=(10, 5))
+    plt.plot(rewards, label='Average Reward', color='green')
+    plt.xlabel('Rollouts')
+    plt.ylabel('Average Reward')
+    plt.title('Average Reward Per Rollout Over Time')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 def main():
     # get the network from storage if available
-    file_path = DIR_PATH + "dual_stream_net.pth"
+    file_path = DIR_PATH + "none.pth"
     network = download_network(file_path)
+    print("parameters: ", count_parameters(network))
 
     # while true iterate
 
@@ -90,8 +133,19 @@ def main():
 
     print("Running optimisation sequence, enter 'q' at any time to quit...")
 
+    logs = {
+        "policy_loss": [],
+        "value_loss": [],
+        "entropy": [],
+        "total_loss": [],
+    }
+    rewards = []
+    trainer = NetworkTrainer(network)
     while not stop_event.is_set():
-        iteration(network)
+        iter_logs, avg_reward = iteration(trainer, network)
+        for log in iter_logs:
+            logs[log].extend(iter_logs[log])
+            rewards.append(avg_reward)
         # i, o, e = select.select([sys.stdin], [], [], 1)  # wait 1 second
         # if i:
         #     user_input = sys.stdin.readline().strip()
@@ -100,6 +154,8 @@ def main():
     
     # sequence complete, save then exit
     print("Completed optimisation sequence")
+    plot_logs(logs)
+    plot_rewards(rewards)
     save_input = input("Do you want to save the model? (y/n): ").strip().lower()
     if save_input == 'y':
         # Save the model parameters to the file

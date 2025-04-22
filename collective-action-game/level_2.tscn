@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3 uid="uid://cwd185ij4qiqc"]
+[gd_scene load_steps=8 format=3 uid="uid://cwd185ij4qiqc"]
 
 [ext_resource type="Script" path="res://level.gd" id="1_ma3f7"]
 [ext_resource type="PackedScene" uid="uid://0camacc4rx4q" path="res://collision_surface.tscn" id="2_8ubg8"]
 [ext_resource type="PackedScene" uid="uid://pya8xf1cf3d7" path="res://goal.tscn" id="3_vf8vy"]
 [ext_resource type="PackedScene" uid="uid://deanjfkolbxvy" path="res://borders.tscn" id="4_03qlw"]
 [ext_resource type="Script" path="res://bot_connector.gd" id="5_hfs2d"]
+[ext_resource type="PackedScene" uid="uid://bfuo8mojyhg2" path="res://bot.tscn" id="5_nyuft"]
 [ext_resource type="Script" path="res://bot_manager.gd" id="6_3m11j"]
 
 [node name="Level2" type="Node2D" node_paths=PackedStringArray("goal")]
@@ -21,6 +22,9 @@ position = Vector2(963, 484)
 [node name="Borders" parent="." instance=ExtResource("4_03qlw")]
 
 [node name="Bots" type="Node2D" parent="."]
+
+[node name="Bot" parent="Bots" instance=ExtResource("5_nyuft")]
+position = Vector2(137, 537)
 
 [node name="BotConnector" type="Node" parent="."]
 script = ExtResource("5_hfs2d")

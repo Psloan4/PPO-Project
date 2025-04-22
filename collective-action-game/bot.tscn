@@ -13,7 +13,7 @@ shader_parameter/replacement_color = null
 size = Vector2(120, 128)
 
 [node name="Bot" type="CharacterBody2D"]
-scale = Vector2(0.5, 0.5)
+scale = Vector2(0.4, 0.4)
 collision_layer = 3
 script = ExtResource("1_18nl6")
 

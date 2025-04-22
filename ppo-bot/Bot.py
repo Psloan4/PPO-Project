@@ -19,7 +19,7 @@ class Bot:
 
         self.max_x = 1152
         self.max_y = 648
-        self.action_interval = .2
+        self.action_interval = .1
 
     def connect(self):
         """ Attempt to send a message to the server to establish a connection """
@@ -73,9 +73,13 @@ class Bot:
     def build_input_tensor(self, game_state):
         bot_pos = np.array(game_state['bot_data'], dtype=np.float32)
         goal_pos = np.array(game_state['goal_data'], dtype=np.float32)
+        # print(bot_pos, goal_pos)
         
         normalized_bot = bot_pos / np.array([self.max_x, self.max_y], dtype=np.float32)
         normalized_goal = goal_pos / np.array([self.max_x, self.max_y], dtype=np.float32)
+
+        # print(normalized_bot, normalized_goal)
+        # print("")
 
         scan = np.array(game_state['scan_data'], dtype=np.float32) / 3.0
         flat_scan = scan.flatten()
@@ -123,10 +127,11 @@ class Bot:
                         print("Episode result: ", data["end_episode"])
                         self.episode_data[-1]["done"] = True
                         if data["end_episode"] == "win":
-                            print("length: ", len(self.episode_data))
-                            self.episode_data[-1]["reward"] += 10
+                            print("positive reward")
+                            self.episode_data[-1]["reward"] += 1
                         else:
-                            self.episode_data[-1]["reward"] -= 10
+                            self.episode_data[-1]["reward"] -= 1
+                            print("negative reward")
                         self.close()
                         return True
                     elif "game_state" in data:
@@ -146,7 +151,7 @@ class Bot:
             "state": input_tensor.detach().cpu().numpy().tolist(),
             "action": action_info["action"],
             "log_prob": action_info["log_prob"],
-            "reward": self.get_distance_reward(self.latest_game_state["bot_data"], self.latest_game_state["goal_data"]),
+            "reward": 0,#self.get_distance_reward(self.latest_game_state["bot_data"], self.latest_game_state["goal_data"]),
             "value": action_info["value"],
             "done": False,
         })
@@ -188,7 +193,7 @@ class Bot:
 
     def get_distance_reward(self, bot_data, goal_data) -> float:
         distance = math.sqrt((goal_data[0] - bot_data[0])**2 + (goal_data[1] - bot_data[1])**2)
-        reward = -distance / 200
+        reward = distance / 1000
         #print("reward: ", reward)
         return reward
     

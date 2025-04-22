@@ -29,7 +29,6 @@ func create_bot(peer: PacketPeerUDP):
 	bot.global_position = spawn_point.global_position
 	total_bots += 1
 	bot.bot_id = total_bots
-	bot.goal_position = goal_position
 	bot_container.add_child(bot)
 	#bot_data[str(bot.bot_id)] = [0, 0]
 
@@ -37,8 +36,9 @@ func create_bot(peer: PacketPeerUDP):
 	#for bot: Bot in bot_container.get_children():
 		#
 
-func start_bots():
+func start_bots(goal_position: Vector2):
 	for bot: Bot in bot_container.get_children():
+		bot.goal_position = goal_position
 		bot.in_session = true
 		bot.send_packet({"start_episode": null})
 

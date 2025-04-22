@@ -1,7 +1,7 @@
 class_name Level
 extends Node2D
 
-const EPISODE_TIME = 30
+const EPISODE_TIME = 10
 
 @export var goal: Area2D
 
@@ -15,6 +15,7 @@ const EPISODE_TIME = 30
 @export var spawn4: Node2D
 
 func _ready() -> void:
+	Engine.time_scale = 5
 	var spawn_points: Array[Node2D] = [spawn1, spawn2, spawn3, spawn4]
 	bot_manager.spawn_points = spawn_points
 	bot_manager.round_spawn_points = spawn_points.duplicate()
@@ -27,7 +28,7 @@ func _ready() -> void:
 
 func begin_episode():
 	print("Episode started")
-	bot_manager.start_bots()
+	bot_manager.start_bots(goal.global_position)
 	episode_timer.start(EPISODE_TIME)
 
 func end_episode(_winner: Node2D, end_state: String):
@@ -42,7 +43,7 @@ func end_episode(_winner: Node2D, end_state: String):
 func reposition_goal_and_spawn():
 	var min_x = 100
 	var max_x = 1052
-	var min_distance = 100
+	var min_distance = 400
 
 	# Move goal to a new position
 	var new_goal_x = randf_range(min_x, max_x)
